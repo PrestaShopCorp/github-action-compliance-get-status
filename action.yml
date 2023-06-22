@@ -1,6 +1,6 @@
-name: ComplianceGetReports
+name: ComplianceGetStatus
 author: PrestaShopCorp
-description: Get reports of a scan launch into API Compliance, launched after @prestashopcorp/github-action-compliance-send.
+description: Get status of a scan on api compliance.
 inputs:
   version:
     description: 'Module version'
