@@ -1,0 +1,65 @@
+name: ComplianceGetReports
+author: PrestaShopCorp
+description: Get reports of a scan launch into API Compliance, launched after @prestashopcorp/github-action-compliance-send.
+inputs:
+  version:
+    description: 'Module version'
+    required: true
+  technical_name:
+    description: 'Module technicalName'
+    required: true
+  token_uri:
+    description: ''
+    required: true
+  cookie: 
+    description: ''
+    required: true
+  client_id: 
+    description: ''
+    required: true
+  client_secret:
+    description: ''
+    required: true
+  grant_type: 
+    description: ''
+    required: true
+  audience: 
+    description: ''
+    required: true
+  scope: 
+    description: ''
+    required: true
+  compliance_base_uri:
+    description: ''
+    required: true
+
+runs:
+  using: composite
+  steps:
+      - uses: actions/checkout@v3
+      - name: Get OAUTH token from oauth.prestashop.com
+        uses: ./actions/auth-compliance
+        id: get_oauth_token
+        with:
+          token_uri: ${{ inputs.token_uri }}
+          cookie: ${{ inputs.cookie }}
+          client_id: ${{ inputs.client_id }}
+          client_secret: ${{ inputs.client_secret }}
+          grant_type: ${{ inputs.grant_type }}
+          audience: ${{ inputs.audience }}
+          scope: ${{ inputs.scope }}
+      - name: get-status
+        id: get_status
+        run: |
+          curl --location --request GET "${{ inputs.compliance_base_uri }}/orchestrator/v1/status?technicalName=${{ inputs.technical_name }}&version=${{ inputs.version }}" \
+            --header "Connection: keep-alive" \
+            --header 'Accept: application/json' \
+            --header "Accept: */*" \
+            --oauth2-bearer ${{ steps.get_oauth_token.outputs.TOKEN }} \
+            --output status.json && exit 0
+            jq --color-output . status.json | less -R && exit 0
+
+          # Generate Matrix
+          services=( $(jq -r '.servicesStatus[].service' status.json) ) && exit 0
+          json=$(jq --compact-output --null-input '$ARGS.positional' --args -- "${services[@]}") && exit 0
+          echo services="{\"services\":$json}" >> $GITHUB_OUTPUT && exit 0
